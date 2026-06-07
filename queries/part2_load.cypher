@@ -13,14 +13,14 @@ CREATE CONSTRAINT genre_name_unique IF NOT EXISTS
 FOR (g:Genre)
 REQUIRE g.name IS UNIQUE;
 
-LOAD CSV WITH HEADERS FROM 'RAW_URL_USERS' AS row
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/kassimuss/kovalchuk_nosql_3/refs/heads/main/csv_import/users.csv' AS row
 MERGE (u:User {userId: toInteger(row.userId)})
 SET
   u.gender = row.gender,
   u.age = toInteger(row.age),
   u.occupation = row.occupation;
 
-LOAD CSV WITH HEADERS FROM 'RAW_URL_MOVIES' AS row
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/kassimuss/kovalchuk_nosql_3/refs/heads/main/csv_import/movies.csv' AS row
 MERGE (m:Movie {movieId: toInteger(row.movieId)})
 SET
   m.title = row.title,
@@ -30,7 +30,7 @@ SET
     ELSE null
   END;
 
-LOAD CSV WITH HEADERS FROM 'RAW_URL_MOVIES' AS row
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/kassimuss/kovalchuk_nosql_3/refs/heads/main/csv_import/movies.csv' AS row
 MATCH (m:Movie {movieId: toInteger(row.movieId)})
 WITH m, split(row.genres, '|') AS genres
 UNWIND genres AS genreName
@@ -39,7 +39,9 @@ MERGE (m)-[:HAS_GENRE]->(g);
 
 CALL apoc.periodic.iterate(
   "
-  LOAD CSV WITH HEADERS FROM 'RAW_URL_RATINGS' AS row
+  LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/kassimuss/kovalchuk_nosql_3/refs/heads/main/csv_import/ratings.csv' AS row
+  WITH row
+  LIMIT 200000
   RETURN row
   ",
   "
@@ -50,7 +52,7 @@ CALL apoc.periodic.iterate(
     r.rating = toFloat(row.rating),
     r.timestamp = toInteger(row.timestamp)
   ",
-  {batchSize: 10000, parallel: false}
+  {batchSize: 5000, parallel: false}
 );
 
 MATCH (u:User) RETURN count(u) AS users;
